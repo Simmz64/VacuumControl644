@@ -11,6 +11,10 @@
 
 volatile uint8_t decOn = 0;
 
+uint8_t chamberState = 0;
+uint8_t prepumpState = 0;
+uint8_t cryoState = 0;
+
 
 void drawScreen(void) {
 	switch(state) {
@@ -118,11 +122,13 @@ void drawQChamberScreen(uint16_t color) {
 	drawBackButton(color);
 
 	// Draw optionbox 2
-	drawRect(OPT2_X0, OPT2_Y0, OPT2_X1, OPT2_Y1, color);
-	char* s2 = "Test";
-	uint16_t len = strlen(s2);
-	uint16_t offset = len*FONT_SX;
-	printStr(((OPT2_X0+OPT2_X1)>>1) - (offset>>1), ((OPT2_Y0+OPT2_Y1)>>1) - (FONT_SY>>1), s2, len, color); 
+	if(chamberState) {
+		drawOptionButton(" Open chamber ", color);
+		PORTC |= (1 << PC2);
+	} else {
+		drawOptionButton("Close chamber", color);
+		PORTC &= ~(1 << PC2);
+	}
 
 }
 
@@ -135,11 +141,13 @@ void drawQPrepumpScreen(uint16_t color) {
 	drawBackButton(color);
 
 	// Draw optionbox 2
-	drawRect(OPT2_X0, OPT2_Y0, OPT2_X1, OPT2_Y1, color);
-	char* s2 = "Test";
-	uint16_t len = strlen(s2);
-	uint16_t offset = len*FONT_SX;
-	printStr(((OPT2_X0+OPT2_X1)>>1) - (offset>>1), ((OPT2_Y0+OPT2_Y1)>>1) - (FONT_SY>>1), s2, len, color);
+	if(prepumpState) {
+		drawOptionButton(" Stop Prepump ", color);
+		PORTC |= (1 << PC1);
+	} else {
+		drawOptionButton("Start Prepump", color);
+		PORTC &= ~(1 << PC1);
+	}
 }
 
 void drawQCryoScreen(uint16_t color) {
@@ -152,6 +160,13 @@ void drawQCryoScreen(uint16_t color) {
 
 	// Draw optionbox 2
 	drawOptionButton("Test", color);
+	if(cryoState) {
+		drawOptionButton(" Stop Cryopump ", color);
+		PORTC |= (1 << PC0);
+	} else {
+		drawOptionButton("Start Cryopump", color);
+		PORTC &= ~(1 << PC0);
+	}
 }
 
 void drawQPrepumpPipeScreen(uint16_t color) {
@@ -277,8 +292,7 @@ void buttons(uint16_t xp, uint16_t yp) {
 			checkBackButton(xp, yp);
 
 			if(checkOptionButton(xp, yp)) {
-				clean();
-				drawQChamberScreen(COLOR_B);
+				chamberState = !chamberState;
 			}
 			break;
 
@@ -286,11 +300,18 @@ void buttons(uint16_t xp, uint16_t yp) {
 		case Q_PREPUMP:
 			checkBackButton(xp, yp);
 
+			if(checkOptionButton(xp, yp)) {
+				prepumpState = !prepumpState;
+			}
 			break;
 
 
 		case Q_CRYO:
 			checkBackButton(xp, yp);
+			
+			if(checkOptionButton(xp, yp)) {
+				cryoState = !cryoState;
+			}
 			break;
 
 
@@ -380,6 +401,7 @@ void drawOptionButton(char* text, uint16_t color) {
 	drawRect(OPT2_X0, OPT2_Y0, OPT2_X1, OPT2_Y1, color);
 	uint16_t len = strlen(text);
 	uint16_t offset = len*FONT_SX;
+	//fillRect(OPT2_X0+1, ((OPT2_Y0+OPT2_Y1)>>1) - (FONT_SY>>1), (OPT2_X0-OPT2_X1) - 1, 8, COLOR_BG);
 	printStr(((OPT2_X0+OPT2_X1)>>1) - (offset>>1), ((OPT2_Y0+OPT2_Y1)>>1) - (FONT_SY>>1), text, len, color);
 }
 

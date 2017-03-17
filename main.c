@@ -11,7 +11,11 @@ volatile uint16_t potentiom = 0;
 void init(void) {
 
    // Set MOSI, SCK, PB0, PB1, PB2 as output
-   DDRB = (1<<PB5)|(1<<PB7) | (1<<PB0)|(1<<PB1)|(1<<PB2);
+   // PB4 has to set to output for the SPI to work
+   DDRB = (1<< PB4) | (1<<PB5)|(1<<PB7) | (1<<PB0)|(1<<PB1)|(1<<PB2);
+
+   // Set output ports
+   DDRC = 0xFF;
 
    // Set PWM outputs (TODO)
    //DDRD = (1<<PD7)|(0 << PD6);
@@ -28,9 +32,9 @@ void init(void) {
 }
 
 void blinkLED(void) {
-   PORTB |= (1 << PB0);
+   PORTC |= (1 << PC0);
    _delay_ms(50);
-   PORTB &= ~(1 << PB0);
+   PORTC &= ~(1 << PC0);
    _delay_ms(50);
 }
 
@@ -40,12 +44,13 @@ void testTouch(void) {
 
    while(1) {
       // Flashes LED and induces delay in loop
-      blinkLED();
+      //blinkLED();
 
       drawCross(xpos, ypos, COLOR_BG);
 
       z = readZ();
-      
+      fillRect(20, 8, 32, 8, COLOR_BG);
+      printNum(20, 8, z, COLOR_FG);
       if(z > 500) {
          xpos = readX();
          ypos = readY();
@@ -80,7 +85,7 @@ void testTouch(void) {
 void testGUI(void) {
    uint16_t xpos = 0, ypos = 0, z = 0;
    uint8_t redraw = 1, pressed = 0;
-   uint8_t i = 0, j = 0;
+   //uint8_t i = 0, j = 0;
 
 
 
@@ -93,11 +98,14 @@ void testGUI(void) {
 
       z = readZ();
 
-      if(z > 500 && !pressed) {
+      if(z > 300 && !pressed) {
+         // xpos and ypos values smaller than 512 (maybe 500) should not be allowed! Put do{}while()-loop around both and sample until legit value received?
          xpos = readX();
          ypos = readY();
          redraw = 1;
          pressed = 1;
+         printNum(240, 80, xpos, COLOR_FG);
+         printNum(240, 90, ypos, COLOR_FG);
          buttons(xpos - 512, ypos - 512);
       } else {
          xpos = 0;
@@ -118,7 +126,7 @@ void testGUI(void) {
       }
 */
 
-      _delay_ms(1);
+      //_delay_ms(1);
    }
 }
 /*
@@ -161,7 +169,7 @@ void pidLoop(void) {
 
       adjustHeading();
       //adjustHeadingSimple();
-/*
+
       pidWrite(i);
       j++;
       if(j == 12) {
@@ -178,6 +186,11 @@ int main (void)
 {
 
 	init();
+   PORTC |= (1 << PC4);
+   _delay_ms(300);
+   PORTC &= ~(1 << PC4);
+   _delay_ms(300);
+
    tft_reset();
 
    cls(COLOR_BG);

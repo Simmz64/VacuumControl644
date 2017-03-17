@@ -14,7 +14,7 @@ uint16_t readX(void) {
 	PORTA &= ~(1 << YM);
 
 	// Read from channel X+ (ADC3 here)
-	ADMUX = (0 << REFS1)|(0 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(1 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(1 << MUX0);
 
 	_delay_us(20);
 
@@ -27,7 +27,7 @@ uint16_t readX(void) {
 
 	int16_t diff = samples[1] - samples[0];
 
-	if(diff < 8 && diff > -8) {
+	if(diff < 4 && diff > -4) {
 		xs = (samples[0] + samples[1]) >> 1; // Average 2 samples
 		xs += 1195;
 		xs *= 323;
@@ -55,7 +55,7 @@ uint16_t readY(void) {
 	PORTA &= ~(1 << XM);
 
 	// Read from channel Y+ (ADC2 here)
-	ADMUX = (0 << REFS1)|(0 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(0 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(0 << MUX0);
 
 	_delay_us(20);
 
@@ -68,7 +68,7 @@ uint16_t readY(void) {
 
 	int16_t diff = samples[1] - samples[0];
 
-	if(diff < 10 && diff > -10) {
+	if(diff < 5 && diff > -5) {
 		samples[1] = (samples[0] + samples[1]) >> 1; // Average 2 samples
 		ys = (1023 - samples[1]);
 		ys += 1331;
@@ -93,7 +93,7 @@ uint16_t readZ(void) {
 	PORTA &= ~(1 << YP);
 
 	// Read from channel X- (ADC1 here)
-	ADMUX = (0 << REFS1)|(0 << REFS0)|(0 << ADLAR)|(0 << MUX1)|(1 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(0 << MUX1)|(1 << MUX0);
 	_delay_us(20);
 
 
@@ -102,7 +102,7 @@ uint16_t readZ(void) {
 	z1 = ADC;
 
 	// Read from channel Y+ (ADC2 here)
-	ADMUX = (0 << REFS1)|(0 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(0 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(0 << MUX0);
 	_delay_us(20);
 
 

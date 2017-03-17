@@ -8,6 +8,7 @@ unsigned char spi_transceive (unsigned char data) {
 	// Wait until transmission is complete
 	while(!(SPSR & (1<<SPIF)));
 
+
 	// Return received data
 	return(SPDR);
 }
@@ -55,7 +56,7 @@ void tft_reset(void) {
 	_delay_ms(1);
 	rst_high();                       // end hardware reset
 	_delay_ms(5);
-	
+
 	wr_cmd(0x01);                     // SW reset
 	_delay_ms(5);
 	wr_cmd(0x28);                     // display off
@@ -170,6 +171,8 @@ void tft_reset(void) {
 	spi_transceive(0x3A);
 	spi_transceive(0x1F);
 	cs_high();
+
+
 
 	windowMax();
 	
