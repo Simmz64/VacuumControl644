@@ -100,12 +100,18 @@ void testGUI(void) {
 
       if(z > 300 && !pressed) {
          // xpos and ypos values smaller than 512 (maybe 500) should not be allowed! Put do{}while()-loop around both and sample until legit value received?
-         xpos = readX();
-         ypos = readY();
+         do{
+            xpos = readX();
+         } while(xpos < 500);
+         
+         do{
+            ypos = readY();
+         } while(ypos < 500);
+         
          redraw = 1;
          pressed = 1;
-         printNum(240, 80, xpos, COLOR_FG);
-         printNum(240, 90, ypos, COLOR_FG);
+         //printNum(240, 80, xpos, COLOR_FG);
+         //printNum(240, 90, ypos, COLOR_FG);
          buttons(xpos - 512, ypos - 512);
       } else {
          xpos = 0;
@@ -129,7 +135,7 @@ void testGUI(void) {
       //_delay_ms(1);
    }
 }
-/*
+
 void pidLoop(void) {
    uint16_t xpos = 0, ypos = 0, z = 0;
    uint8_t redraw = 1, pressed = 0;
@@ -148,9 +154,15 @@ void pidLoop(void) {
 
       z = readZ();
 
-      if(z > 500 && !pressed) {
-         xpos = readX();
-         ypos = readY();
+      if(z > 300 && !pressed) {
+         do{
+            xpos = readX();
+         } while(xpos < 500);
+         
+         do{
+            ypos = readY();
+         } while(ypos < 500);
+
          redraw = 1;
          pressed = 1;
          pidButtons(xpos - 512, ypos - 512);
@@ -169,7 +181,7 @@ void pidLoop(void) {
 
       adjustHeading();
       //adjustHeadingSimple();
-
+/*
       pidWrite(i);
       j++;
       if(j == 12) {
@@ -177,10 +189,10 @@ void pidLoop(void) {
          i++;
          i = i % 256;
       }
-
+*/
       _delay_ms(1);
    }
-}*/
+}
 
 int main (void)
 {
@@ -195,7 +207,7 @@ int main (void)
 
    cls(COLOR_BG);
 
-   //pidLoop();
-   testGUI();
+   pidLoop();
+   //testGUI();
    //testTouch();
 }

@@ -14,7 +14,7 @@
 #include "tft.h"
 #include "touch.h"
 #include "gui.h"
-//#include "pid.h"
+#include "pid.h"
 //#include "script.h"
 
 /***** Function prototypes *****/

@@ -6,7 +6,8 @@ uint16_t readX(void) {
 	uint16_t samples[NUMSAMPLES];
 	uint8_t i;
 
-	DDRA = (0 << XP)|(1 << YP)|(0 << XM)|(1 << YM);
+	DDRA &= ~((1 << XP)|(1 << XM));
+	DDRA |= (1 << YP)|(1 << YM);
 	PORTA &= ~(1 << XP);
 	PORTA &= ~(1 << XM);
 
@@ -14,7 +15,7 @@ uint16_t readX(void) {
 	PORTA &= ~(1 << YM);
 
 	// Read from channel X+ (ADC3 here)
-	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(1 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(0 << MUX2)|(1 << MUX1)|(1 << MUX0);
 
 	_delay_us(20);
 
@@ -47,7 +48,8 @@ uint16_t readY(void) {
 	uint16_t samples[NUMSAMPLES];
 	uint8_t i;
 
-	DDRA = (1 << XP)|(0 << YP)|(1 << XM)|(0 << YM);
+	DDRA &= ~((1 << YP)|(1 << YM));
+	DDRA |= (1 << XP)|(1 << XM);
 	PORTA &= ~(1 << YP);
 	PORTA &= ~(1 << YM);
 
@@ -55,7 +57,7 @@ uint16_t readY(void) {
 	PORTA &= ~(1 << XM);
 
 	// Read from channel Y+ (ADC2 here)
-	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(0 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(0 << MUX2)|(1 << MUX1)|(0 << MUX0);
 
 	_delay_us(20);
 
@@ -87,13 +89,15 @@ uint16_t readY(void) {
 uint16_t readZ(void) {
 	int32_t z1, z2, z;
 
-	DDRA = (1 << XP)|(0 << YP)|(0 << XM)|(1 << YM);
+	DDRA &= ~((1 << YP)|(1 << XM));
+	DDRA |= (1 << XP) | (1 << YM);
+
 	PORTA &= ~(1 << XP);
 	PORTA |= (1 << YM);
 	PORTA &= ~(1 << YP);
 
 	// Read from channel X- (ADC1 here)
-	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(0 << MUX1)|(1 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(0 << MUX2)|(0 << MUX1)|(1 << MUX0);
 	_delay_us(20);
 
 
@@ -102,7 +106,7 @@ uint16_t readZ(void) {
 	z1 = ADC;
 
 	// Read from channel Y+ (ADC2 here)
-	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(1 << MUX1)|(0 << MUX0);
+	ADMUX = (0 << REFS1)|(1 << REFS0)|(0 << ADLAR)|(0 << MUX2)|(1 << MUX1)|(0 << MUX0);
 	_delay_us(20);
 
 
