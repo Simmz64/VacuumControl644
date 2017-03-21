@@ -4,7 +4,7 @@
 volatile enum pidstates pidstate = PID_MAIN;
 volatile int8_t sign = 1;
 //volatile int32_t Kp = 0, Ki = 0, Kd = 0;
-uint16_t posbuf[5] = {0, 0, 0, 0, 0};
+uint16_t posbuf[POSBUFSIZE] = { 0 }; // Init with a´ll zeroes
 uint8_t bufptr = 0;
 uint16_t pos = 0;
 uint16_t dest = 512;
@@ -15,10 +15,11 @@ int16_t preverr = 0;
 int16_t dtinv = 10;
 uint16_t head = 400;
 uint8_t update = 1;
+int32_t prevt = 0;
 
-int16_t Kp_int = 0, Ki_int = 0, Kd_int = 0;
-int16_t Kp_dec = 0, Ki_dec = 0, Kd_dec = 0;
-uint32_t Kp_scl = 1, Ki_scl = 1, Kd_scl = 1;
+int32_t Kp_int = 0, Ki_int = 0, Kd_int = 0;
+int32_t Kp_dec = 0, Ki_dec = 0, Kd_dec = 0;
+int32_t Kp_scl = 1, Ki_scl = 1, Kd_scl = 1;
 
 
 /************************************** ADC ***************************************/
@@ -35,6 +36,9 @@ void pidInit(void) {
 
     DDRB |= (1 << PID_OUT1)|(1 << PID_OUT2);   // set PWM-pins to output
     DDRA |= (1 << PA6) | (1 << PA7);
+
+    // Start timer 2 to determine dt
+    TCCR1B = (1 << CS12)|(0 << CS11)|(1 << CS10); // Prescaler set to 1/1024, 11718.75 ticks per second
 }
 
 // Reads an analog value from the ADC on port PC4
@@ -216,7 +220,7 @@ void pidButtons(uint16_t xp, uint16_t yp) {
 
 
 //void readNumericsScreen(uint16_t xp, uint16_t yp, volatile int32_t* k) {
-void readNumericsScreen(uint16_t xp, uint16_t yp, int16_t* integerpart, int16_t* decimalpart, uint32_t* scl) {
+void readNumericsScreen(uint16_t xp, uint16_t yp, int32_t* integerpart, int32_t* decimalpart, int32_t* scl) {
 	uint8_t inc = 0;
 	int32_t tempInt = 0;
 	uint16_t tempDec = 0, tempscl = *scl;
@@ -325,7 +329,7 @@ void readUintScreen(uint16_t xp, uint16_t yp, uint16_t* k) {
 void readPos(void) {
 	posbuf[bufptr] = pidRead();
 	bufptr++;
-	bufptr %= 5;
+	bufptr %= POSBUFSIZE;
 	meanPos();
 }
 
@@ -333,11 +337,11 @@ void readPos(void) {
 void meanPos(void) {
 	uint16_t vals = 0;
 	uint8_t i;
-	for(i = 0; i < 5; i++) {
+	for(i = 0; i < POSBUFSIZE; i++) {
 		vals += posbuf[i];
 	}
 
-	pos = vals/5;
+	pos = vals/POSBUFSIZE;
 }
 
 // Function to calculate the error (min (|A|, |B|, |C|))
@@ -352,17 +356,17 @@ void errCalc(void) {
 	int16_t A, B, C;
 	A = pos - dest;
 	A = abs(A);
-	B = pos - (dest + 1023);
+	B = pos - (dest + PID_MAXREAD);
 	B = abs(B);
-	C = pos - (dest - 1023);
+	C = pos - (dest - PID_MAXREAD);
 	C = abs(C);
 
 	if(A < B && A < C) {
 		err = pos - dest;
 	} else if(B < C) {
-		err = pos - (dest + 1023);
+		err = pos - (dest + PID_MAXREAD);
 	} else {
-		err = pos - (dest - 1023);
+		err = pos - (dest - PID_MAXREAD);
 	}
 
 	if(!(integrerr > 200000) && (Ki_int != 0 || Ki_dec != 0)) {
@@ -394,11 +398,19 @@ void adjustHeading(void) {
 	// integrerr adds err every loop
 	// deriverr is current err - previous err
 	// dt is execution time of loop / how often outputs are sent
+	
 	errCalc();
 	
-	int32_t outint = ((int32_t) Ki_int * integrerr)/dtinv + Kp_int * err + (Kd_int * deriverr)*(dtinv);
-	int32_t outdec = ((((int32_t) Ki_dec) * integrerr) / Ki_scl) / dtinv + (Kp_dec * err) / Kp_scl + ((Kd_dec * deriverr * (dtinv)) / Kd_scl) ;
-	int32_t out = outint + outdec;
+	//int32_t outint = ((int32_t) Ki_int * integrerr)/dtinv + Kp_int * err + (Kd_int * deriverr)*(dtinv);
+	//int32_t outdec = ((((int32_t) Ki_dec) * integrerr) / Ki_scl) / dtinv + (Kp_dec * err) / Kp_scl + ((Kd_dec * deriverr * (dtinv)) / Kd_scl) ;
+	//int32_t out = outint + outdec;
+	int32_t dt = TCNT1 - prevt;
+	
+	int32_t p_part = Kp_int * err + (Kp_dec * err) / Kp_scl;
+	int32_t i_part = (Ki_int * integrerr * dt) / TIMESCALE + ((Ki_dec * integrerr * dt) / Ki_scl) / TIMESCALE;
+	int32_t d_part = (Kd_int * deriverr * TIMESCALE) / dt + ((Kd_dec * deriverr * TIMESCALE) / Kd_scl) / dt;
+
+	int32_t out = p_part + i_part + d_part;
 
 
 	if(out > 0) {
@@ -420,6 +432,10 @@ void adjustHeading(void) {
 
 	fillRect(200, 20, 64, 8, COLOR_BG);
 	printNum(200, 20, out, COLOR_FG);
+
+	prevt = TCNT1;
+	TCNT1 = 0x0000;
+
 }
 
 void stopTurn(void) {
@@ -442,22 +458,13 @@ void turnRight(void) {
 	PORTA |= (1 << PA7);
 }
 
-void printPIDGain(uint16_t xp, uint16_t yp, int16_t* integerpart, int16_t* decimalpart, uint32_t* scl, uint16_t color) {
+void printPIDGain(uint16_t xp, uint16_t yp, int32_t* integerpart, int32_t* decimalpart, int32_t* scl, uint16_t color) {
 	char buf[16];
 //	uint16_t i, c;
 	itoa(*integerpart, buf, 10);
 	uint8_t len = strlen(buf);
 	buf[len] = '.';
-/*
-	// Attempt to print leading zeroes. This leads to everything adding a leading zero.
-	c = *scl;
-	i = 0;
-	while(c > 1) {
-		i++;
-		buf[len + i] = '0';
-		c /= 10;
-	}
-*/	
+
 	itoa(*decimalpart, (buf + len + 1), 10);
 	len = strlen(buf);
 	printStr(xp, yp, buf, len, color);
