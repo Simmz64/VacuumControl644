@@ -1,6 +1,7 @@
 #include "gui.h"
 
-/* How to add another screen
+/* 
+How to add another screen
 1. Add the state to enum states (main.h)
 2. Add case in buttons
 3. Add draw method

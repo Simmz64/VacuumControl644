@@ -49,6 +49,8 @@ void wr_cmd(unsigned char cmd) {
 
 void tft_reset(void) {
 
+	/* Reset cycle as per TFT Screen documentation */
+
 	cs_high();
 	dc_high();
 	rst_low();                        // display reset
@@ -207,6 +209,9 @@ void tft_reset(void) {
 	
 }
 
+/*
+Change the color value of a single pixel at coordinates (x,y)
+*/
 void pixel(uint16_t x, uint16_t y, uint16_t color) {
 	wr_cmd(0x2A);
 	spi_transceive(x >> 8);
@@ -224,6 +229,9 @@ void pixel(uint16_t x, uint16_t y, uint16_t color) {
 	cs_high();
 }
 
+/*
+Set drawing window to box starting at the top left (x,y) of width w and height h
+*/
 void window(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
 	wr_cmd(0x2A);
 	spi_transceive(x >> 8);
@@ -240,10 +248,16 @@ void window(uint16_t x, uint16_t y, uint16_t w, uint16_t h) {
 	cs_high();
 }
 
+/*
+Set drawing window to entire screen
+*/
 void windowMax(void) {
 	window(0, 0, XMAX-1, YMAX-1);
 }
 
+/*
+Draw horizontal line between x0 and x1 at height y
+*/
 void drawHLine(uint16_t x0, uint16_t x1, uint16_t y, uint16_t color) {
 	uint16_t w;
 	w = x1 - x0 + 1;
@@ -259,6 +273,9 @@ void drawHLine(uint16_t x0, uint16_t x1, uint16_t y, uint16_t color) {
 	windowMax();
 }
 
+/*
+Draw vertical line between y0 and y1 at width x
+*/
 void drawVLine(uint16_t x, uint16_t y0, uint16_t y1, uint16_t color) {
 	uint16_t h;
 	h = y1 - y0 + 1;
@@ -274,6 +291,9 @@ void drawVLine(uint16_t x, uint16_t y0, uint16_t y1, uint16_t color) {
 	windowMax();
 }
 
+/*
+Draw rectangle (non-filled) with corners at (x0,y0), (x0,y1), (x1,y0) and (x1,y1)
+*/
 void drawRect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color) {
 	if (x1 > x0) drawHLine(x0,x1,y0,color);
 	else  drawHLine(x1,x0,y0,color);
@@ -288,7 +308,9 @@ void drawRect(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color
 	else drawVLine(x1,y1,y0,color);
 }
 
-
+/*
+Fill rectangle with corners at (x0,y0), (x0,y1), (x1,y0) and (x1,y1)
+*/
 void fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
 	uint16_t j;
 	window(x, y, w, h);
@@ -302,6 +324,9 @@ void fillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color) {
 	windowMax();
 }
 
+/*
+Clear screen, setting all pixels to color
+*/
 void cls(uint16_t color) {
 	// Divide screen into 8 strips, 320 wide by 30 high
 	// Use a fillRect for each strip
@@ -316,6 +341,9 @@ void cls(uint16_t color) {
 
 }
 
+/*
+Test function for drawing symbols on the screen
+*/
 void testPutChar(uint16_t color) {
 	window(40, 40, 8, 8);
 	wr_cmd(0x2C);
@@ -331,6 +359,9 @@ void testPutChar(uint16_t color) {
 	windowMax();
 }
 
+/*
+Help function for test drawing symbols on the screen
+*/
 void helpChar(uint8_t in, uint16_t color) {
 	uint8_t j;
 	for(j = FONT_SX; j > 0; j--) {
@@ -344,6 +375,9 @@ void helpChar(uint8_t in, uint16_t color) {
 	}
 }
 
+/*
+Put an 8x8 character on the screen with top left corner at (x,y)
+*/
 void putChar(uint16_t x, uint16_t y, uint8_t ch, uint16_t color) {
 	window(x, y, FONT_SX, FONT_SX); // Font is 8x8
 	uint8_t ind = ch - 31; // Convert char to corresponding index in font
